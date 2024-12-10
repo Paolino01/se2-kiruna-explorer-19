@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { useMapEvents } from 'react-leaflet';
 import { LatLng } from 'leaflet';
 import Modal from 'react-modal';
@@ -27,6 +27,7 @@ import ModalHeader from '../molecules/ModalHeader';
 import ToggleButton from '../atoms/ToggleButton';
 import { DocumentIcon } from '../molecules/documentsItems/DocumentIcon';
 import useToast from '../../utils/hooks/toast';
+import MunicipalityCoordinatesContext from '../../context/MunicipalityCoordinatesContext';
 
 Modal.setAppElement('#root');
 
@@ -43,6 +44,8 @@ interface DocumentFormProps {
   showCoordNamePopup?: boolean;
   documents: IDocument[];
   setDocuments: (documents: IDocument[]) => void;
+  filteredDocuments: IDocument[];
+  setFilteredDocuments: (documents: IDocument[]) => void;
   setModalOpen: (open: boolean) => void;
   selectedDocument?: IDocument;
 }
@@ -54,6 +57,8 @@ const DocumentForm = ({
   setCoordinates,
   documents,
   setDocuments,
+  filteredDocuments,
+  setFilteredDocuments,
   showCoordNamePopup = false,
   selectedDocument,
   setModalOpen,
@@ -197,6 +202,8 @@ const DocumentForm = ({
   // Toast
   const { toast, showToast, hideToast } = useToast();
 
+  const {isMarkerInsideKiruna} = useContext(MunicipalityCoordinatesContext);
+
   const validateStep = () => {
     const newErrors: { [key: string]: string } = {};
     if (title.trim() === '') newErrors.title = 'Title is required';
@@ -215,6 +222,8 @@ const DocumentForm = ({
       newErrors.docType = 'Document type is required';
     if (position && !selectedCoordId && !coordName)
       newErrors.newPoint = 'A new point must have a valid name';
+    if(position && !selectedCoordId && !isMarkerInsideKiruna(position))
+      newErrors.newPoint = 'Point must be inside of Kiruna Borders';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -298,6 +307,11 @@ const DocumentForm = ({
             return doc.id == selectedDocument.id ? responseDocument : doc;
           }),
         );
+        setFilteredDocuments(
+          filteredDocuments.map((doc: IDocument) => {
+            return doc.id == selectedDocument.id ? responseDocument : doc;
+          }),
+        )
       }
     }
   };
