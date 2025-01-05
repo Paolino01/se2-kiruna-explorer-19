@@ -42,8 +42,17 @@ We’ve made deployment incredibly simple using a **Docker Compose file**. This 
    ```bash
    docker-compose up
    ```
+
+   > #### Please note that, since the initial setup of the database can be slow due to the number of documents it contains, after building the Docker image for the first time it may be necessary to stop and re-run the container in order to see the documents in the web application
+
 4. **Access the Application**:
    Open your browser and navigate to **[localhost:5173](http://localhost:5173)** to explore Kiruna.
+
+---
+
+## 📂 Database Sync
+
+The first time the database is launched, it will automatically synchronize with a pre-existing database that contains the initial values for the project. This ensures that the necessary data is readily available when you start the application.
 
 ---
 
@@ -66,6 +75,16 @@ To add new users, you can use the [create-user.sh](./create-user.sh) script. Fol
 
 <br>
 By following these steps, you can create as many users as you need.
+
+---
+
+## 📝 Default User
+
+There is an existing default user already registered as an Urban Planner. You can use the following credentials to log in:
+
+Email: kiruna@gmail.com <br>
+Password: Kiruna1234! <br>
+Feel free to log in with this account to explore the platform as an Urban Planner.
 
 ---
 

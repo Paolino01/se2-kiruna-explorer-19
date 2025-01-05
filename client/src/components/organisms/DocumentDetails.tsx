@@ -170,7 +170,9 @@ const DocumentDetails: React.FC<DocumentDetailsProps> = ({
           {list.map((item) => (
             <div key={nanoid()}>
               {item.label}:{' '}
-              <span className="font-bold text-xl">{item.content}</span>
+              <span className="font-bold text-xl">
+                {item.content}
+              </span>
             </div>
           ))}
         </div>
@@ -191,7 +193,9 @@ const DocumentDetails: React.FC<DocumentDetailsProps> = ({
             onClick={() => {
               navigate('/diagram');
             }}
-          />
+          >
+            See on the diagram
+            </ButtonRounded>
         )}
         {
           /* Button to edit the document */
@@ -203,7 +207,9 @@ const DocumentDetails: React.FC<DocumentDetailsProps> = ({
               onClick={() => {
                 setModalOpen(true);
               }}
-            />
+            >
+              Edit
+              </ButtonRounded>
           )
         }
       </div>

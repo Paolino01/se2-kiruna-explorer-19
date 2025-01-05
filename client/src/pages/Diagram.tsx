@@ -16,7 +16,7 @@ import { DocumentConnectionsList } from '../components/molecules/documentsItems/
 import SidebarContext from '../context/SidebarContext.js';
 import { DocumentIcon } from '../components/molecules/documentsItems/DocumentIcon.js';
 import ReactDOMServer from 'react-dom/server';
-import StakeholderLegend from '../components/molecules/StakeholderLegend.js';
+import Legend2 from '../components/molecules/legend/Legend.js';
 
 const LABEL_FONT = { size: 50, color: '#000000' };
 const OFFSET_VIEW = { x: 200, y: 500 };
@@ -38,15 +38,35 @@ const options = {
   },
 };
 
-const graphBEInfo = await API.getGraphInfo();
 
+const fetchGraphInfo = async () => {
+  try {
+    const graphBEInfo = await API.getGraphInfo();
+    return graphBEInfo;
+  } catch (error) {
+    console.error('Error fetching graph info:', error);
+    return null;
+  }
+};
 const Diagram = () => {
+  const [graphBEInfo, setGraphBEInfo] = useState<{ minYear: number; maxYear: number } | null>(null);
+
+  useEffect(() => {
+    const getGraphInfo = async () => {
+      const data = await fetchGraphInfo();
+      setGraphBEInfo(data);
+    };
+
+    getGraphInfo();
+  }, []);
+
   const { setFeedbackFromError } = useContext(FeedbackContext);
   const headerRef = useRef<HTMLDivElement>(null);
   const legendRef = useRef<HTMLDivElement>(null);
   const { selectedDocument, setSelectedDocument, setSidebarVisible } =
     useContext(SidebarContext);
   const [types, setTypes] = useState<any[]>([]);
+  const [legendOpen, setLegendOpen] = useState(false); 
 
   //Needed to show a document's information when hovering on it
   const [documentInfoPopup, setDocumentInfoPopup] = useState<{
@@ -66,13 +86,13 @@ const Diagram = () => {
   const [state, setState] = useState({
     graph: {
       nodes: [] as any[],
-      edges: [] as { from: any; to: any; color: string }[],
+      edges: [] as { from: any; to: any; color: string; id: string }[],
     },
   });
 
   const label_year = [] as any[];
-  const minYear = graphBEInfo.minYear;
-  const maxYear = graphBEInfo.maxYear;
+  const minYear = graphBEInfo?.minYear ?? 2000;
+  const maxYear = graphBEInfo?.maxYear ?? 2030;
   const networkRef = useRef<any>(null);
   const gridRef = useRef<HTMLDivElement>(null); // Added for the grid
 
@@ -693,7 +713,7 @@ const Diagram = () => {
       const center_x = computeYearX(draggedNode.year);
       const center_y = computeStyleY(draggedNode);
 
-      if (/^label_/.test(draggedNode.id) || /^1:/.test(draggedNode.id)) {
+      if (draggedNode.id.startsWith('label_') || draggedNode.id.startsWith('1:')) {
         // Regex to filter the labels to avoid moving them
         newposition.x = nodeLastPosition.x;
         newposition.y = nodeLastPosition.y;
@@ -773,23 +793,30 @@ const Diagram = () => {
           position: 'absolute',
           top: `${headerRef.current?.offsetHeight ? headerRef.current?.offsetHeight + 10 : 0}px`,
           left: '10px',
-          zIndex: 10,
+          zIndex: 1,
         }}
         ref={legendRef}
       >
         <Legend />
       </div>
 
-      <div
+
+      <button
+        onClick={() => setLegendOpen(!legendOpen)}
+        className={`bg-black text-white text-base pt-2 pb-2 pl-3 pr-3 rounded-full ${legendOpen ? 'open' : ''}`}
         style={{
-          position: 'absolute',
-          top: `${headerRef.current?.offsetHeight && legendRef.current?.offsetHeight ? headerRef.current?.offsetHeight + legendRef.current?.offsetHeight + 20 : 0}px`,
-          left: '10px',
+          position: 'fixed',
+          bottom: legendOpen ? '31vh' : '10px', //Moves the button above the legend window when it's open
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 1,
+          transition: 'bottom 0.3s ease-out', //Adds the transition
         }}
       >
-        <StakeholderLegend />
-      </div>
+        {legendOpen ? '↓' : '↑'}
+      </button>
+
+      <Legend2 isOpen={legendOpen} />
 
       {state.graph && (
         <Graph
@@ -833,38 +860,39 @@ const Diagram = () => {
                 handleNodeClick(selectedNode);
               }
             },
-
+            
             click: (event: any) => {
-              console.log(event)
-              if(event.nodes.length == 0) {
-                const { edges } = event
-                const selectedEdge: {from: any, to: any, color: string, id: string, document: string, type: string} | undefined = state.graph.edges.find((e) => e.id == edges[0]) as {from: any, to: any, color: string, id: string, document: string} | undefined
+              console.log(event);
+              if (event.nodes.length == 0) {
+                const { edges } = event;
+                const selectedEdge = state.graph.edges.find(
+                  (e) => e.id == edges[0]
+                ) as { from: any; to: any; color: string; id: string; document: string; type: string } | undefined;
                 if (selectedEdge) {
                   const updatedEdges = state.graph.edges.map((edge: any) =>
                     edge.id === edges[0]
                       ? { ...edge, smooth: { enabled: !edge.smooth?.enabled, type: 'curvedCW', roundness: 0.2 } }
                       : edge
                   );
-                  setState({graph: {nodes: state.graph.nodes, edges: updatedEdges }});
-
-                  const isEdgeCurved = localStorage.getItem(`edge-${selectedEdge.document}`)
-                  if(isEdgeCurved) {
+                  setState({ graph: { nodes: state.graph.nodes, edges: updatedEdges } });
+            
+                  const isEdgeCurved = localStorage.getItem(`edge-${selectedEdge.document}`);
+                  if (isEdgeCurved) {
                     const isCurved = JSON.parse(isEdgeCurved).isCurved;
                     localStorage.setItem(
                       `edge-${selectedEdge.document}`,
-                      JSON.stringify({ isCurved: !isCurved }),
+                      JSON.stringify({ isCurved: !isCurved })
                     );
-                  }
-                  else {
+                  } else {
                     localStorage.setItem(
                       `edge-${selectedEdge.document}`,
-                      JSON.stringify({ isCurved: true }),
+                      JSON.stringify({ isCurved: true })
                     );
                   }
                 }
               }
             },
-
+            
             hoverNode: function (event: {
               node: number;
               pointer: { DOM: { x: number; y: number } };
