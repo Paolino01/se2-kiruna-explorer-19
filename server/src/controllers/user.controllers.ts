@@ -203,7 +203,7 @@ export const login = async (
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 3600000, // 1 hour
+      maxAge: 64800000, // 18 hours
       path: '/',
     });
     res.json({ token });
